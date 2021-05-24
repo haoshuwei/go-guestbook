@@ -13,8 +13,10 @@ spec:
         app: guestbook
     spec:
       containers:
-      - image: okteto/guestbook:golang
+      # - image: okteto/guestbook:golang
+      - image:  registry.cn-hangzhou.aliyuncs.com/haoshuwei24/guestbook:v1
         name: guestbook
+        imagePullPolicy: Always
         env:
           - name: REDIS_HOST
             value: redis
@@ -26,9 +28,44 @@ kind: Service
 metadata:
   name: guestbook
 spec:
-  type: ClusterIP  
+  type: NodePort
   ports:
   - name: guestbook
-    port: 8080
+    port: 80
   selector:
     app: guestbook
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        selector: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:6
